@@ -32,7 +32,11 @@ flt_conversion = "%.2f"
 
 def float_format(*numbers):
     """Format a float to the default precision, without zeroes or dots"""
-    return = [(flt_conversion % number).rstrip('0').rstrip('.') for number in numbers]
+    res = tuple((flt_conversion % number).rstrip('0').rstrip('.') for number in numbers)
+    if len(numbers) == 1:
+        return res[0]
+    else:
+        return res
 
 def humanize(number):
     """Format a number to engineer scale"""
@@ -133,7 +137,7 @@ def template(string, **kwargs):
 
 def coord_format(xy):
     """Format x y coords to svg"""
-    return float_format(*xy)
+    return " ".join(float_format(*xy))
 
 swap = lambda tuple_: tuple(reversed(tuple_))
 ident = lambda x: x

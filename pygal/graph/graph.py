@@ -274,7 +274,7 @@ class Graph(BaseGraph):
 
             if self.y_label_rotation:
                 text.attrib['transform'] = "rotate(%d %s %s)" % (
-                    self.y_label_rotation, float_format(x)), float_format(y))
+                    self.y_label_rotation, float_format(x), float_format(y))
 
         if self._y_2nd_labels:
             secondary_ax = self.svg.node(
