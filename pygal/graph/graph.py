@@ -28,7 +28,7 @@ from pygal.view import View, LogView, XYLogView, ReverseView
 from pygal.util import (
     cached_property, majorize, humanize, split_title,
     truncate, reverse_text_len, get_text_box, get_texts_box, cut, rad,
-    decorate)
+    decorate, float_format)
 from math import sqrt, ceil, cos, sin
 from itertools import repeat, chain
 
@@ -164,7 +164,7 @@ class Graph(BaseGraph):
 
         if 0 not in [label[1] for label in self._x_labels]:
             self.svg.node(axis, 'path',
-                          d='M%f %f v%f' % (0, 0, self.view.height),
+                          d='M%s %s v%s' % float_format(0, 0, self.view.height),
                           class_='line')
         lastlabel = self._x_labels[-1][0]
 
@@ -178,7 +178,7 @@ class Graph(BaseGraph):
             last_guide = (self._y_2nd_labels and label == lastlabel)
             self.svg.node(
                 guides, 'path',
-                d='M%f %f v%f' % (x or 0, 0, self.view.height),
+                d='M%s %s v%s' % float_format(x or 0, 0, self.view.height),
                 class_='%s%s%sline' % (
                     'axis ' if label == "0" else '',
                     'major ' if major else '',
@@ -198,8 +198,8 @@ class Graph(BaseGraph):
             if text.text != label:
                 self.svg.node(guides, 'title').text = label
             if self.x_label_rotation:
-                text.attrib['transform'] = "rotate(%d %f %f)" % (
-                    self.x_label_rotation, x, y)
+                text.attrib['transform'] = "rotate(%d %s %s)" % (
+                    self.x_label_rotation, float_format(x), float_format(y))
 
         if self._x_2nd_labels:
             secondary_ax = self.svg.node(
@@ -222,8 +222,8 @@ class Graph(BaseGraph):
                 )
                 text.text = label
                 if self.x_label_rotation:
-                    text.attrib['transform'] = "rotate(%d %f %f)" % (
-                        -self.x_label_rotation, x, y)
+                    text.attrib['transform'] = "rotate(%d %s %s)" % (
+                        -self.x_label_rotation, float_format(x), float_format(y))
 
     def _y_axis(self):
         """Make the y axis: labels and guides"""
@@ -236,7 +236,7 @@ class Graph(BaseGraph):
                 self.show_y_guides):
             self.svg.node(
                 axis, 'path',
-                d='M%f %f h%f' % (
+                d='M%s %s h%s' % float_format(
                     0, 0 if self.inverse_y_axis else self.view.height,
                     self.view.width),
                 class_='line'
@@ -256,7 +256,7 @@ class Graph(BaseGraph):
             if self.show_y_guides:
                 self.svg.node(
                     guides, 'path',
-                    d='M%f %f h%f' % (0, y, self.view.width),
+                    d='M%s %s h%s' % float_format(0, y, self.view.width),
                     class_='%s%s%sline' % (
                         'axis ' if label == "0" else '',
                         'major ' if major else '',
@@ -273,8 +273,8 @@ class Graph(BaseGraph):
             text.text = label
 
             if self.y_label_rotation:
-                text.attrib['transform'] = "rotate(%d %f %f)" % (
-                    self.y_label_rotation, x, y)
+                text.attrib['transform'] = "rotate(%d %s %s)" % (
+                    self.y_label_rotation, float_format(x)), float_format(y))
 
         if self._y_2nd_labels:
             secondary_ax = self.svg.node(
@@ -295,8 +295,8 @@ class Graph(BaseGraph):
                 )
                 text.text = label
                 if self.y_label_rotation:
-                    text.attrib['transform'] = "rotate(%d %f %f)" % (
-                        self.y_label_rotation, x, y)
+                    text.attrib['transform'] = "rotate(%d %s %s)" % (
+                        self.y_label_rotation, float_format(x), float_format(y))
 
     def _legend(self):
         """Make the legend box"""
@@ -429,8 +429,8 @@ class Graph(BaseGraph):
                     x=self._legend_at_left_width,
                     y=i * (self.title_font_size + self.spacing) + yc
                 )
-                text.attrib['transform'] = "rotate(%d %f %f)" % (
-                    -90, self._legend_at_left_width, yc)
+                text.attrib['transform'] = "rotate(%d %s %s)" % (
+                    -90, float_format(self._legend_at_left_width), float_format(yc))
                 text.text = title_line
 
     def _interpolate(self, xs, ys):

@@ -19,7 +19,7 @@
 
 from __future__ import division
 from pygal.graph.graph import Graph
-from pygal.util import cut, cached_property, decorate
+from pygal.util import cut, cached_property, decorate, float_format
 from pygal.etree import etree
 
 
@@ -83,7 +83,7 @@ class BaseMap(Graph):
                     cls = area.get('class', '').split(' ')
                     cls.append('color-%d' % i)
                     area.set('class', ' '.join(cls))
-                    area.set('style', 'fill-opacity: %f' % (ratio))
+                    area.set('style', 'fill-opacity: %s' % float_format(ratio))
 
                     metadata = serie.metadata.get(j)
                     if metadata:

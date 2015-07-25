@@ -25,7 +25,7 @@ from __future__ import division
 from pygal.graph.line import Line
 from pygal.adapters import positive, none_to_zero
 from pygal.view import PolarView, PolarLogView
-from pygal.util import deg, cached_property, compute_scale, majorize, cut
+from pygal.util import deg, cached_property, compute_scale, majorize, cut, float_format, coord_format
 from math import cos, pi
 
 
@@ -69,7 +69,7 @@ class Radar(Line):
             return
 
         axis = self.svg.node(self.nodes['plot'], class_="axis x web")
-        format_ = lambda x: '%f %f' % x
+        format_ = coord_format(x)
         center = self.view((0, 0))
         r = self._rmax
         if self.x_labels_major:
@@ -110,8 +110,8 @@ class Radar(Line):
             angle = - theta + pi / 2
             if cos(angle) < 0:
                 angle -= pi
-            text.attrib['transform'] = 'rotate(%f %s)' % (
-                deg(angle), format_(pos_text))
+            text.attrib['transform'] = 'rotate(%s %s)' % (
+                float_format(deg(angle)), format_(pos_text))
 
     def _y_axis(self, draw_axes=True):
         if not self._y_labels:

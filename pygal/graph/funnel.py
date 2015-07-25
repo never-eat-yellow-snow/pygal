@@ -22,7 +22,7 @@ Funnel chart
 """
 
 from __future__ import division
-from pygal.util import decorate, cut, compute_scale
+from pygal.util import decorate, cut, compute_scale, coord_format
 from pygal.adapters import positive, none_to_zero
 from pygal.graph.graph import Graph
 
@@ -38,7 +38,7 @@ class Funnel(Graph):
     def funnel(self, serie):
         """Draw a dot line"""
         serie_node = self.svg.serie(serie)
-        fmt = lambda x: '%f %f' % x
+        fmt = coord_format
         for i, poly in enumerate(serie.points):
             metadata = serie.metadata.get(i)
             value = self._format(serie.values[i])

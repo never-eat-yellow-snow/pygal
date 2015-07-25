@@ -31,7 +31,7 @@ import importlib
 from datetime import date, datetime
 from numbers import Number
 from math import cos, sin, pi
-from pygal.util import template, coord_format, minify_css
+from pygal.util import template, coord_format, minify_css, coord_format
 from pygal import __version__
 from pygal.css import base_css
 
@@ -242,7 +242,7 @@ class Svg(object):
         project = lambda rho, alpha: (
             rho * sin(-alpha), rho * cos(-alpha))
         diff = lambda x, y: (x[0] - y[0], x[1] - y[1])
-        fmt = lambda x: '%f %f' % x
+        fmt = coord_format
         get_radius = lambda r: fmt(tuple([r] * 2))
         absolute_project = lambda rho, theta: fmt(
             diff(center, project(rho, theta)))

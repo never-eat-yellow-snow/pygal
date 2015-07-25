@@ -28,11 +28,11 @@ from math import floor, pi, log, log10, ceil
 from itertools import cycle
 ORDERS = u("yzafpnµm kMGTPEZY")
 
+flt_conversion = "%.2f"
 
-def float_format(number):
-    """Format a float to a precision of 3, without zeroes or dots"""
-    return ("%.3f" % number).rstrip('0').rstrip('.')
-
+def float_format(*numbers):
+    """Format a float to the default precision, without zeroes or dots"""
+    return = [(flt_conversion % number).rstrip('0').rstrip('.') for number in numbers]
 
 def humanize(number):
     """Format a number to engineer scale"""
@@ -133,7 +133,7 @@ def template(string, **kwargs):
 
 def coord_format(xy):
     """Format x y coords to svg"""
-    return '%f %f' % xy
+    return float_format(*xy)
 
 swap = lambda tuple_: tuple(reversed(tuple_))
 ident = lambda x: x

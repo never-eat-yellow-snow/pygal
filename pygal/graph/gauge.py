@@ -22,7 +22,7 @@ Gauge chart
 """
 
 from __future__ import division
-from pygal.util import decorate, compute_scale
+from pygal.util import decorate, compute_scale, coord_format
 from pygal.view import PolarThetaView, PolarThetaLogView
 from pygal.graph.graph import Graph
 
@@ -46,7 +46,7 @@ class Gauge(Graph):
         for i, theta in enumerate(serie.values):
             if theta is None:
                 continue
-            fmt = lambda x: '%f %f' % x
+            fmt = coord_format
             value = self._format(serie.values[i])
             metadata = serie.metadata.get(i)
             gauges = decorate(
