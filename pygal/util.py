@@ -2,7 +2,7 @@
 # This file is part of pygal
 #
 # A python svg graph plotting library
-# Copyright © 2012-2014 Kozea
+# Copyright © 2012-2015 Kozea
 #
 # This library is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the Free
@@ -16,16 +16,19 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with pygal. If not, see <http://www.gnu.org/licenses/>.
-"""
-Various utils
 
-"""
+"""Various utility functions"""
+
 from __future__ import division
-from pygal._compat import u, is_list_like, to_unicode
+
 import re
 from decimal import Decimal
-from math import floor, pi, log, log10, ceil
-from itertools import cycle
+
+from math import ceil, floor, log, log10, pi
+
+from pygal._compat import is_list_like, to_unicode, u
+
+
 ORDERS = u("yzafpnµm kMGTPEZY")
 
 flt_conversion = "%.2f"
@@ -42,6 +45,8 @@ def humanize(number):
     """Format a number to engineer scale"""
     if is_list_like(number):
         return', '.join(map(humanize, number))
+    if number is None:
+        return u('∅')
     order = number and int(floor(log(abs(number)) / log(1000)))
     human_readable = ORDERS.split(" ")[int(order > 0)]
     if order == 0 or order > len(human_readable):
@@ -168,8 +173,8 @@ def compute_logarithmic_scale(min_, max_, min_scale, max_scale):
 
 
 def compute_scale(
-        min_, max_, logarithmic=False, order_min=None,
-        min_scale=4, max_scale=20):
+        min_, max_, logarithmic, order_min,
+        min_scale, max_scale):
     """Compute an optimal scale between min and max"""
     if min_ == 0 and max_ == 0:
         return [0]
@@ -181,6 +186,7 @@ def compute_scale(
         if log_scale:
             return log_scale
             # else we fallback to normal scalling
+
     order = round(log10(max(abs(min_), abs(max_)))) - 1
     if order_min is not None and order < order_min:
         order = order_min
@@ -221,13 +227,7 @@ def get_text_box(text, fs):
 
 def get_texts_box(texts, fs):
     """Approximation of multiple texts bounds"""
-    def get_text_title(texts):
-        for text in texts:
-            if isinstance(text, dict):
-                yield text['title']
-            else:
-                yield text
-    max_len = max(map(len, get_text_title(texts)))
+    max_len = max(map(len, texts))
     return (fs, text_len(max_len, fs))
 
 
@@ -240,6 +240,12 @@ def decorate(svg, node, metadata):
         if not isinstance(xlink, dict):
             xlink = {'href': xlink, 'target': '_blank'}
         node = svg.node(node, 'a', **xlink)
+        svg.node(node, 'desc', class_='xlink').text = to_unicode(
+            xlink.get('href'))
+
+    if 'tooltip' in metadata:
+        svg.node(node, 'title').text = to_unicode(
+            metadata['tooltip'])
 
     if 'color' in metadata:
         color = metadata.pop('color')
@@ -249,22 +255,17 @@ def decorate(svg, node, metadata):
     if 'style' in metadata:
         node.attrib['style'] = metadata.pop('style')
 
-    for key, value in metadata.items():
-        if key == 'xlink' and isinstance(value, dict):
-            value = value.get('href', value)
-        if value:
-            svg.node(node, 'desc', class_=key).text = to_unicode(value)
-
+    if 'label' in metadata:
+        svg.node(node, 'desc', class_='label').text = to_unicode(
+            metadata['label'])
     return node
 
 
-def cycle_fill(short_list, max_len):
-    """Fill a list to max_len using a cycle of it"""
-    short_list = list(short_list)
-    list_cycle = cycle(short_list)
-    while len(short_list) < max_len:
-        short_list.append(next(list_cycle))
-    return short_list
+def alter(node, metadata):
+    """Override nodes attributes from metadata node mapping"""
+    if node is not None and metadata and 'node' in metadata:
+        node.attrib.update(
+            dict((k, str(v)) for k, v in metadata['node'].items()))
 
 
 def truncate(string, index):
@@ -273,26 +274,38 @@ def truncate(string, index):
         string = string[:index - 1] + u('…')
     return string
 
-cached_property = property
-# # Stolen from brownie http://packages.python.org/Brownie/
-# class cached_property(object):
-#     """Optimize a static property"""
-#     def __init__(self, getter, doc=None):
-#         self.getter = getter
-#         self.__module__ = getter.__module__
-#         self.__name__ = getter.__name__
-#         self.__doc__ = doc or getter.__doc__
 
-#     def __get__(self, obj, type_=None):
-#         if obj is None:
-#             return self
-#         value = obj.__dict__[self.__name__] = self.getter(obj)
-#         return value
+# # Stolen partly from brownie http://packages.python.org/Brownie/
+class cached_property(object):
+
+    """Memoize a property"""
+
+    def __init__(self, getter, doc=None):
+        """Initialize the decorator"""
+        self.getter = getter
+        self.__module__ = getter.__module__
+        self.__name__ = getter.__name__
+        self.__doc__ = doc or getter.__doc__
+
+    def __get__(self, obj, type_=None):
+        """
+        Get descriptor calling the property function and replacing it with
+        its value or on state if we are in the transient state.
+        """
+        if obj is None:
+            return self
+        value = self.getter(obj)
+        if hasattr(obj, 'state'):
+            setattr(obj.state, self.__name__, value)
+        else:
+            obj.__dict__[self.__name__] = self.getter(obj)
+        return value
 
 css_comments = re.compile(r'/\*.*?\*/', re.MULTILINE | re.DOTALL)
 
 
 def minify_css(css):
+    """Little css minifier"""
     # Inspired by slimmer by Peter Bengtsson
     remove_next_comment = 1
     for css_comment in css_comments.findall(css):
@@ -327,12 +340,14 @@ def compose(f, g):
 
 
 def safe_enumerate(iterable):
+    """Enumerate which does not yield None values"""
     for i, v in enumerate(iterable):
         if v is not None:
             yield i, v
 
 
 def split_title(title, width, title_fs):
+    """Split a string for a specified width and font size"""
     titles = []
     if not title:
         return titles

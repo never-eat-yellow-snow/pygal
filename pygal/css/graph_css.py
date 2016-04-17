@@ -1,10 +1,31 @@
+# -*- coding: utf-8 -*- 
 data="""\
+/*
+ * This file is part of pygal
+ *
+ * A python svg graph plotting library
+ * Copyright (c) 2012 Kozea
+
+ * This library is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option) any
+ * later version.
+ *
+ * This library is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with pygal. If not, see <http://www.gnu.org/licenses/>.
+*/
+
 {{ id }}text.no_data {
   text-anchor: middle;
 }
 
 {{ id }}.guide.line {
-  fill-opacity: 0;
+  fill: none;
 }
 
 {{ id }}.centered {
@@ -27,27 +48,32 @@ data="""\
   text-anchor: start;
 }
 
+{{ id }}.axis.x:not(.web) text[transform].backwards {
+  text-anchor: end;
+}
+
 {{ id }}.axis.y text {
   text-anchor: end;
 }
+
+{{ id }}.axis.y text[transform].backwards {
+  text-anchor: start;
+}
+
 {{ id }}.axis.y2 text {
   text-anchor: start;
 }
 
-{{ id }}.axis.y .logarithmic text:not(.major) ,
-{{ id }}.axis.y2 .logarithmic text:not(.major) {
-  font-size: 50%;
+{{ id }}.axis.y2 text[transform].backwards {
+  text-anchor: end;
 }
 
 {{ id }}.axis .guide.line {
-  stroke-dasharray: 4,4;
+  stroke-dasharray: {{ style.guide_stroke_dasharray }};
 }
 
 {{ id }}.axis .major.guide.line {
-  stroke-dasharray: 6,6;
-}
-{{ id }}.axis text.major {
-  stroke-width: 0.5px;
+  stroke-dasharray: {{ style.major_guide_stroke_dasharray }};
 }
 
 {{ id }}.horizontal .axis.y .guide.line,
@@ -88,8 +114,12 @@ data="""\
   stroke-width: 5px;
 }
 
-{{ id }}.series text {
-  stroke: none;
+{{ id }}.dot.negative {
+  fill: transparent;
+}
+
+{{ id }} text, {{ id }} tspan {
+  stroke: none !important;
 }
 
 {{ id }}.series text.active {
@@ -97,14 +127,19 @@ data="""\
 }
 
 {{ id }}.tooltip rect {
-  fill-opacity: 0.8;
+  fill-opacity: .95;
+  stroke-width: .5;
 }
 
 {{ id }}.tooltip text {
   fill-opacity: 1;
 }
 
-{{ id }}.tooltip text tspan.label {
-  fill-opacity: .8;
+{{ id }}.showable {
+  visibility: hidden;
+}
+
+{{ id }}.showable.shown {
+  visibility: visible;
 }
 """

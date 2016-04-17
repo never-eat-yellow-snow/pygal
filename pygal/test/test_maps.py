@@ -16,38 +16,15 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with pygal. If not, see <http://www.gnu.org/licenses/>.
-"""Value adapters to use when a chart doesn't accept all value types"""
-from decimal import Decimal
-from pygal._compat import is_str
+
+"""Map plugins tests are imported here"""
+
+import pkg_resources
 
 
-def positive(x):
-    """Return zero if value is negative"""
-    if x is None:
-        return
-    if is_str(x):
-        return x
-    if x < 0:
-        return 0
-    return x
-
-
-def not_zero(x):
-    """Return None if value is zero"""
-    if x == 0:
-        return
-    return x
-
-
-def none_to_zero(x):
-    """Return 0 if value is None"""
-    if x is None:
-        return 0
-    return x
-
-
-def decimal_to_float(x):
-    """Cast Decimal values to float"""
-    if isinstance(x, Decimal):
-        return float(x)
-    return x
+# Load plugins tests
+for entry in pkg_resources.iter_entry_points('pygal.test.test_maps'):
+    module = entry.load()
+    for k, v in module.__dict__.items():
+        if k.startswith('test_'):
+            globals()['test_maps_' + entry.name + '_' + k[5:]] = v

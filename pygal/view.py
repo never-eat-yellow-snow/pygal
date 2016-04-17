@@ -2,7 +2,7 @@
 # This file is part of pygal
 #
 # A python svg graph plotting library
-# Copyright © 2012-2014 Kozea
+# Copyright © 2012-2015 Kozea
 #
 # This library is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the Free
@@ -16,17 +16,20 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with pygal. If not, see <http://www.gnu.org/licenses/>.
-"""
-Projection and bounding helpers
-"""
+
+"""Projection and bounding helpers"""
 
 from __future__ import division
-from math import sin, cos, log10, pi
+
+from math import cos, log10, pi, sin
 
 
 class Margin(object):
-    """Graph margin"""
+
+    """Class reprensenting a margin (top, right, left, bottom)"""
+
     def __init__(self, top, right, bottom, left):
+        """Create the margin object from the top, right, left, bottom margin"""
         self.top = top
         self.right = right
         self.bottom = bottom
@@ -44,16 +47,23 @@ class Margin(object):
 
 
 class Box(object):
+
     """Chart boundings"""
+
     margin = .02
 
     def __init__(self, xmin=0, ymin=0, xmax=1, ymax=1):
+        """
+        Create the chart bounds with min max horizontal
+        and vertical values
+        """
         self._xmin = xmin
         self._ymin = ymin
         self._xmax = xmax
         self._ymax = ymax
 
     def set_polar_box(self, rmin=0, rmax=1, tmin=0, tmax=2 * pi):
+        """Helper for polar charts"""
         self._rmin = rmin
         self._rmax = rmax
         self._tmin = tmin
@@ -63,38 +73,46 @@ class Box(object):
 
     @property
     def xmin(self):
+        """X minimum getter"""
         return self._xmin
 
     @xmin.setter
     def xmin(self, value):
+        """X minimum setter"""
         if value:
             self._xmin = value
 
     @property
     def ymin(self):
+        """Y minimum getter"""
         return self._ymin
 
     @ymin.setter
     def ymin(self, value):
+        """Y minimum setter"""
         if value:
             self._ymin = value
 
     @property
     def xmax(self):
+        """X maximum getter"""
         return self._xmax
 
     @xmax.setter
     def xmax(self, value):
+        """X maximum setter"""
         if value:
             self._xmax = value
 
     @property
     def ymax(self):
+        """Y maximum getter"""
         return self._ymax
 
     @ymax.setter
     def ymax(self, value):
-        if value:
+        """Y maximum setter"""
+        if value or self.ymin:
             self._ymax = value
 
     @property
@@ -117,8 +135,8 @@ class Box(object):
         if not self.width:
             self.xmax = self.xmin + 1
         if not self.height:
-            self.ymin -= .5
-            self.ymax = self.ymin + 1
+            self.ymin /= 2
+            self.ymax += self.ymin
         xmargin = self.margin * self.width
         self.xmin -= xmargin
         self.xmax += xmargin
@@ -129,8 +147,11 @@ class Box(object):
 
 
 class View(object):
+
     """Projection base class"""
+
     def __init__(self, width, height, box, preserve_aspect = False):
+        """Create the view with a width an height and a box bounds"""
         self.width = width
         self.height = height
         self.box = box
@@ -163,20 +184,28 @@ class View(object):
 
 
 class ReverseView(View):
+
+    """Same as view but reversed vertically"""
+
     def y(self, y):
+        """Project reversed y"""
         if y is None:
             return None
         return self.scaley * (y - self.box.ymin)
 
 
 class HorizontalView(View):
+
+    """Same as view but transposed"""
+
     def __init__(self, width, height, box, preserve_aspect = False):
+        """Create the view with a width an height and a box bounds"""
         self._force_vertical = None
         box.swap()
         super(HorizontalView, self).__init__(width, height, box, preserve_aspect) 
 
     def x(self, x):
-        """Project x"""
+        """Project x as y"""
         if x is None:
             return None
         if self._force_vertical:
@@ -184,6 +213,7 @@ class HorizontalView(View):
         return super(HorizontalView, self).y(x)
 
     def y(self, y):
+        """Project y as x"""
         if y is None:
             return None
         if self._force_vertical:
@@ -192,6 +222,7 @@ class HorizontalView(View):
 
 
 class PolarView(View):
+
     """Polar projection for pie like graphs"""
 
     def __call__(self, rhotheta):
@@ -204,9 +235,11 @@ class PolarView(View):
 
 
 class PolarLogView(View):
+
     """Logarithmic polar projection"""
 
     def __init__(self, width, height, box, preserve_aspect = False):
+        """Create the view with a width an height and a box bounds"""
         super(PolarLogView, self).__init__(width, height, box, preserve_aspect)
         if not hasattr(box, '_rmin') or not hasattr(box, '_rmax'):
             raise Exception(
@@ -233,10 +266,13 @@ class PolarLogView(View):
 
 
 class PolarThetaView(View):
+
     """Logarithmic polar projection"""
 
-    def __init__(self, width, height, box, preserve_aspect = False):
+    def __init__(self, width, height, box, aperture=pi / 3, preserve_aspect = False):
+        """Create the view with a width an height and a box bounds"""
         super(PolarThetaView, self).__init__(width, height, box, preserve_aspect)
+        self.aperture = aperture
         if not hasattr(box, '_tmin') or not hasattr(box, '_tmax'):
             raise Exception(
                 'Box must be set with set_polar_box for polar charts')
@@ -246,25 +282,22 @@ class PolarThetaView(View):
         if None in rhotheta:
             return None, None
         rho, theta = rhotheta
-        aperture = pi / 3
-        if theta > self.box._tmax:
-            theta = (3 * pi - aperture / 2) / 2
-        elif theta < self.box._tmin:
-            theta = (3 * pi + aperture / 2) / 2
-        else:
-            start = 3 * pi / 2 + aperture / 2
-            theta = start + (2 * pi - aperture) * (
-                theta - self.box._tmin) / (
+        start = 3 * pi / 2 + self.aperture / 2
+        theta = start + (2 * pi - self.aperture) * (
+            theta - self.box._tmin) / (
                 self.box._tmax - self.box._tmin)
         return super(PolarThetaView, self).__call__(
             (rho * cos(theta), rho * sin(theta)))
 
 
 class PolarThetaLogView(View):
+
     """Logarithmic polar projection"""
 
-    def __init__(self, width, height, box, preserve_aspect = False):
+    def __init__(self, width, height, box, aperture=pi / 3, preserve_aspect = False):
+        """Create the view with a width an height and a box bounds"""
         super(PolarThetaLogView, self).__init__(width, height, box, preserve_aspect)
+        self.aperture = aperture
         if not hasattr(box, '_tmin') or not hasattr(box, '_tmax'):
             raise Exception(
                 'Box must be set with set_polar_box for polar charts')
@@ -284,15 +317,10 @@ class PolarThetaLogView(View):
         theta = self.box._tmin + (self.box._tmax - self.box._tmin) * (
             log10(theta) - self.log10_tmin) / (
             self.log10_tmax - self.log10_tmin)
-        aperture = pi / 3
-        if theta > self.box._tmax:
-            theta = (3 * pi - aperture / 2) / 2
-        elif theta < self.box._tmin:
-            theta = (3 * pi + aperture / 2) / 2
-        else:
-            start = 3 * pi / 2 + aperture / 2
-            theta = start + (2 * pi - aperture) * (
-                theta - self.box._tmin) / (
+
+        start = 3 * pi / 2 + self.aperture / 2
+        theta = start + (2 * pi - self.aperture) * (
+            theta - self.box._tmin) / (
                 self.box._tmax - self.box._tmin)
 
         return super(PolarThetaLogView, self).__call__(
@@ -300,9 +328,12 @@ class PolarThetaLogView(View):
 
 
 class LogView(View):
-    """Logarithmic projection """
+
+    """Y Logarithmic projection"""
+
     # Do not want to call the parent here
     def __init__(self, width, height, box, preserve_aspect = False):
+        """Create the view with a width an height and a box bounds"""
         self.width = width
         self.height = height
         self.box = box
@@ -317,14 +348,17 @@ class LogView(View):
         if y is None or y <= 0 or self.log10_ymax - self.log10_ymin == 0:
             return 0
         return (self.height - self.height *
-                (log10(y) - self.log10_ymin)
-                / (self.log10_ymax - self.log10_ymin))
+                (log10(y) - self.log10_ymin) / (
+                    self.log10_ymax - self.log10_ymin))
 
 
 class XLogView(View):
-    """Logarithmic projection """
+
+    """X logarithmic projection"""
+
     # Do not want to call the parent here
     def __init__(self, width, height, box, preserve_aspect = False):
+        """Create the view with a width an height and a box bounds"""
         self.width = width
         self.height = height
         self.box = box
@@ -337,12 +371,16 @@ class XLogView(View):
         if x is None or x <= 0 or self.log10_xmax - self.log10_xmin == 0:
             return None
         return (self.width *
-                (log10(x) - self.log10_xmin)
-                / (self.log10_xmax - self.log10_xmin))
+                (log10(x) - self.log10_xmin) /
+                (self.log10_xmax - self.log10_xmin))
 
 
 class XYLogView(XLogView, LogView):
+
+    """X and Y logarithmic projection"""
+
     def __init__(self, width, height, box, preserve_aspect = False):
+        """Create the view with a width an height and a box bounds"""
         self.width = width
         self.height = height
         self.box = box
@@ -354,9 +392,12 @@ class XYLogView(XLogView, LogView):
 
 
 class HorizontalLogView(XLogView):
-    """Logarithmic projection """
+
+    """Transposed Logarithmic projection"""
+
     # Do not want to call the parent here
     def __init__(self, width, height, box, preserve_aspect = False):
+        """Create the view with a width an height and a box bounds"""
         self._force_vertical = None
         self.width = width
         self.height = height
@@ -369,7 +410,7 @@ class HorizontalLogView(XLogView):
         self.box.swap()
 
     def x(self, x):
-        """Project x"""
+        """Project x as y"""
         if x is None:
             return None
         if self._force_vertical:
@@ -377,6 +418,7 @@ class HorizontalLogView(XLogView):
         return super(XLogView, self).y(x)
 
     def y(self, y):
+        """Project y as x"""
         if y is None:
             return None
         if self._force_vertical:

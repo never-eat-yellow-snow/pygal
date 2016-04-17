@@ -2,7 +2,7 @@
 # This file is part of pygal
 #
 # A python svg graph plotting library
-# Copyright © 2012-2014 Kozea
+# Copyright © 2012-2015 Kozea
 #
 # This library is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the Free
@@ -17,14 +17,23 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with pygal. If not, see <http://www.gnu.org/licenses/>.
 
+"""
+pygal contains no map but a base class to create extension
+see the pygal_maps_world package to get an exemple.
+https://github.com/Kozea/pygal_maps_world
+"""
+
 from __future__ import division
-from pygal.graph.graph import Graph
-from pygal.util import cut, cached_property, decorate, float_format
+
 from pygal.etree import etree
+from pygal.graph.graph import Graph
+from pygal.util import alter, cached_property, cut, decorate, float_format
 
 
 class BaseMap(Graph):
-    """Base map."""
+
+    """Base class for maps"""
+
     _dual = True
 
     @cached_property
@@ -36,12 +45,19 @@ class BaseMap(Graph):
                 if val[1] is not None]
 
     def enumerate_values(self, serie):
+        """Hook to replace default enumeration on values"""
         return enumerate(serie.values)
 
     def adapt_code(self, area_code):
+        """Hook to change the area code"""
         return area_code
 
+    def _get_value(self, value):
+        """Get the value formatted for tooltip"""
+        return '%s: %s' % (self.area_names[value[0]], self._format(value[1]))
+
     def _plot(self):
+        """Insert a map in the chart and apply data on it"""
         map = etree.fromstring(self.svg_map)
         map.set('width', str(self.view.width))
         map.set('height', str(self.view.height))
@@ -61,6 +77,7 @@ class BaseMap(Graph):
                     ratio = 1
                 else:
                     ratio = .3 + .7 * (value - min_) / (max_ - min_)
+
                 try:
                     areae = map.findall(
                         ".//*[@class='%s%s %s map-element']" % (
@@ -68,13 +85,7 @@ class BaseMap(Graph):
                             self.kind))
                 except SyntaxError:
                     # Python 2.6 (you'd better install lxml)
-                    areae = []
-                    for g in map:
-                        for e in g:
-                            if '%s%s' % (
-                                    self.area_prefix, area_code
-                            ) in e.attrib.get('class', ''):
-                                areae.append(e)
+                    raise ImportError('lxml is required under python 2.6')
 
                 if not areae:
                     continue
@@ -82,10 +93,13 @@ class BaseMap(Graph):
                 for area in areae:
                     cls = area.get('class', '').split(' ')
                     cls.append('color-%d' % i)
+                    cls.append('serie-%d' % i)
+                    cls.append('series')
                     area.set('class', ' '.join(cls))
                     area.set('style', 'fill-opacity: %s' % float_format(ratio))
 
                     metadata = serie.metadata.get(j)
+
                     if metadata:
                         node = decorate(self.svg, area, metadata)
                         if node != area:
@@ -98,15 +112,21 @@ class BaseMap(Graph):
                                 node.append(area)
                                 g.insert(index, node)
 
-                    last_node = len(area) > 0 and area[-1]
-                    if last_node is not None and last_node.tag == 'title':
-                        title_node = last_node
-                        text = title_node.text + '\n'
-                    else:
-                        title_node = self.svg.node(area, 'title')
-                        text = ''
-                    title_node.text = text + '[%s] %s: %s' % (
-                        serie.title,
-                        self.area_names[area_code], self._format(value))
+                    for node in area:
+                        cls = node.get('class', '').split(' ')
+                        cls.append('reactive')
+                        cls.append('tooltip-trigger')
+                        cls.append('map-area')
+                        node.set('class', ' '.join(cls))
+                        alter(node, metadata)
+
+                    val = self._get_value((area_code, value))
+                    self._tooltip_data(area, val, 0, 0, 'auto')
 
         self.nodes['plot'].append(map)
+
+    def _compute_x_labels(self):
+        pass
+
+    def _compute_y_labels(self):
+        pass
