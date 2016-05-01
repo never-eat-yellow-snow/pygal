@@ -884,7 +884,6 @@ class Graph(PublicApi):
         self._post_compute()
         self._compute_margin()
         self._decorate()
-        print("series=%s has_data=%s values=%s" %(self.series, self._has_data(), len(self._values)))
         if self.series and self._has_data() and self._values:
             self._plot()
         else:

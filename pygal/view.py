@@ -160,17 +160,15 @@ class View(object):
         self.scalex = self.width / self.box.width
         self.scaley = self.height / self.box.height
         if preserve_aspect:
-            print("preserve aspect", self.scalex, self.scaley)
             self.scalex = min(self.scalex, self.scaley)
             self.scaley = self.scalex
-            print(" -> ", self.scalex, self.scaley)
 
     def x(self, x):
         """Project x"""
         if x is None:
             return None
         return self.scalex * (x - self.box.xmin)
-    
+
     def y(self, y):
         """Project y"""
         if y is None:
@@ -202,7 +200,7 @@ class HorizontalView(View):
         """Create the view with a width an height and a box bounds"""
         self._force_vertical = None
         box.swap()
-        super(HorizontalView, self).__init__(width, height, box, preserve_aspect) 
+        super(HorizontalView, self).__init__(width, height, box, preserve_aspect)
 
     def x(self, x):
         """Project x as y"""
